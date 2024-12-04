@@ -42,7 +42,7 @@ app.post('/createAccount', async (req, res) => {
 
     try {
         const newUser = await knex('users').insert({ userName, password }).returning('id');
-        const userId = newUser[0].id + 1;
+        const userId = newUser[0].id;
 
         await knex('users').insert({
             id: userId,
@@ -76,9 +76,30 @@ app.post('/login', async (req, res) => {
     }
 });
 
+app.get('/userInventory/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const userInventory = await knex('inventory').select('*').where({ userId: id});
+        if(!userInventory) {
+            return res.status(404).json({ message: 'Account inventory not found' });
+        }
+        res.json(userInventory);
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: 'Error getting account inventory', error });
+    }
+})
 
 
-
+app.get('/Visitor', async (req, res) => {
+    try {
+        const fullInventory = await knex('inventory').select('*');
+        res.json(fullInventory);
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: 'Error fetching inventory data', error });
+    }
+})
 
 
 
