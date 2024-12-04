@@ -42,7 +42,7 @@ app.post('/createAccount', async (req, res) => {
 
     try {
         const newUser = await knex('users').insert({ userName, password }).returning('id');
-        const userId = newUser[0].id;
+        const userId = newUser[0].id + 1;
 
         await knex('users').insert({
             id: userId,
@@ -54,6 +54,25 @@ app.post('/createAccount', async (req, res) => {
     } catch (error) {
         console.log('Error in account creation:', error);
         res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+app.post('/login', async (req, res) => {
+    const { userName, password } = req.body;
+    try {
+        const user = await knex('users').where({ userName }).first();
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        if (user.password !== password) {
+            return res.status(401).json({ message: 'Invalid credentials' });
+        }
+
+        res.json({ message: 'Login successful', userId: user.id });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error during login', error });
     }
 });
 
