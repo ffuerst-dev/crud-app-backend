@@ -41,14 +41,13 @@ app.post('/createAccount', async (req, res) => {
     }
 
     try {
-        const newUser = await knex('users').insert({ userName, password }).returning('id');
+        const newUser = await knex('users')
+            .insert({ 
+                userName: userName,
+                password: password 
+            })
+            .returning('id');
         const userId = newUser[0].id;
-
-        await knex('users').insert({
-            id: userId,
-            userName: userName,
-            password: password
-        });
 
         res.status(201).json({ message: 'Account created successfully', userId });
     } catch (error) {
@@ -62,11 +61,11 @@ app.post('/login', async (req, res) => {
     try {
         const user = await knex('users').where({ userName }).first();
         if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+            return res.status(404).json({ message: 'Username not found' });
         }
 
         if (user.password !== password) {
-            return res.status(401).json({ message: 'Invalid credentials' });
+            return res.status(401).json({ message: 'Incorrect password' });
         }
 
         res.json({ message: 'Login successful', userId: user.id });
@@ -79,7 +78,7 @@ app.post('/login', async (req, res) => {
 app.get('/userInventory/:id', async (req, res) => {
     const { id } = req.params;
     try {
-        const userInventory = await knex('inventory').select('*').where({ userId: id});
+        const userInventory = await knex('inventory').select('*').where({ userID: id});
         if(!userInventory) {
             return res.status(404).json({ message: 'Account inventory not found' });
         }
@@ -101,6 +100,32 @@ app.get('/Visitor', async (req, res) => {
     }
 })
 
+app.post('/addItem/:userID', async (req, res) => {
+    const { userID } = req.params;
+    const { itemName, description, quantity } = req.body;
+    
+    if(!itemName || !description || !quantity) {
+        return res.status(400).json({ message: 'All boxes must be filled' });
+    } 
+    const existingItem = await knex('inventory').where('itemName', itemName).first();
+    if(existingItem) {
+        return res.status(400).json({ message: 'You have already added this item' });
+    }
+
+    try {
+        const newItem = await knex('inventory').insert({ itemName: itemName,
+            description: description,
+            quantity: quantity,
+            userID: userID })
+            .returning('id');
+        const itemID = newItem[0].id;
+
+        res.status(201).json({ message: 'Item added', itemID });
+    } catch (error) {
+        console.log('Error adding item:', error);
+        res.status(500).json({ message: 'Error adding item to database. Please try again.' });
+    }
+})
 
 
 
