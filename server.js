@@ -127,6 +127,22 @@ app.post('/addItem/:userID', async (req, res) => {
     }
 })
 
+app.delete('userItems/:id/:itemID', async (req, res) => {
+    const { id, itemID } = req.params;
+    
+    try {
+        const result = await knex('inventory')
+            .where({ id: id, itemID: itemID })
+            .del();
+        if(result === 0) {
+            return res.status(404).json({ message: 'Item not found'})
+        }
+        res.json({ message: 'Item deleted' });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ messsage: 'Failed to delete item', error });
+    }
+});
 
 
 app.listen(port, () => {
