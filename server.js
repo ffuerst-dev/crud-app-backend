@@ -127,12 +127,45 @@ app.post('/addItem/:userID', async (req, res) => {
     }
 })
 
-app.delete('userItems/:id/:itemID', async (req, res) => {
-    const { id, itemID } = req.params;
+app.put('/itemDetails/:id/:userID', async (req, res) => {
+    const { id, userID } = req.params;
+    const { itemName, description, quantity } = req.body;
+
+    if (!id || !userID) {
+        return res.status(400).json({ message: 'Item does not exist' });
+    }
+
+    if (!itemName || !description || !quantity) {
+        return res.status(400).json({ message: 'All fields must be filled in' });
+    }
+
+    try {
+        const result = await knex('inventory')
+            .where({ id: id, userID: userID })
+            .update({
+                itemName: itemName,
+                description: description,
+                quantity: quantity,
+            });
+
+        if (result === 0) {
+            return res.status(404).json({ message: 'Item not found' });
+        }
+
+        const updatedItem = await knex('inventory').where({ id: id }).first();
+        res.json(updatedItem);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error updating item', error });
+    }
+});
+
+app.delete('/userItems/:id/:userID', async (req, res) => {
+    const { id, userID } = req.params;
     
     try {
         const result = await knex('inventory')
-            .where({ id: id, itemID: itemID })
+            .where({ id: id, userID: userID })
             .del();
         if(result === 0) {
             return res.status(404).json({ message: 'Item not found'})
